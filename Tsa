@@ -1,1 +1,386 @@
+prac 1 modified exponential curve
+path3 = "co2-ppm-daily.csv"
+
+import numpy as np
+import pandas as pd
+from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+CO2_emission = pd.read_csv(path3)
+CO2_emission['date'] = pd.to_datetime(CO2_emission['date'])
+CO2_emission.sort_values('date', inplace=True)
+
+x_data = CO2_emission['date']
+y_data = CO2_emission['value']
+CO2_emission['Time'] = (CO2_emission['date'] - CO2_emission['date'].min()).dt.days
+x_numerical = CO2_emission['Time']
+
+plt.figure(figsize=(12, 6))
+plt.plot(x_data, y_data, label='Carbon dioxide Emission')
+plt.title('Carbon Dioxide Emission Over Time')
+plt.xlabel('Year')
+plt.ylabel("Emission (in MT)")
+plt.legend()
+plt.show()
+
+def mod_exp_func(t, a, b, c):
+    return a * np.exp(b * t) + c
+
+a_guess = y_data[0]
+central_index = len(x_data) // 2
+centre_value_of_x = x_data[central_index]
+timestamp_obj = pd.Timestamp(centre_value_of_x)
+b_guess = 1 / timestamp_obj.year
+c_guess = y_data[0]
+
+p0 = (a_guess, b_guess, c_guess)
+popt, pcov = curve_fit(mod_exp_func, x_numerical, y_data, p0=p0, maxfev=8000)
+
+sns.heatmap(pcov, cmap='coolwarm', annot=True)
+
+y_pred = mod_exp_func(x_numerical, *popt)
+
+plt.figure(figsize=(12, 6))
+plt.plot(x_data, y_data, label='Original Data')
+plt.plot(x_data, y_pred, '--', label='Fitted Curve')
+plt.title('Carbon Dioxide Emission Over Time and Fitted Modified Exponential Curve')
+plt.xlabel('Year')
+plt.ylabel('Emission (in MT)')
+plt.legend()
+plt.show()
+
+r_squared = r2_score(y_data, y_pred)
+print("Coefficient of Determination = ", r_squared)
+
+prac 2 gompertz Curvepath = "taq-cat-t-jan042010.txt"
+
+import numpy as np
+import pandas as pd
+from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+stock_price = pd.read_csv(path, sep='\s+')
+stock_price['Datetime'] = pd.to_datetime(stock_price['date'].astype(str) + ' ' + stock_price['hour'].astype(str) + ':' + stock_price['minute'].astype(str) + ':' + stock_price['second'].astype(str))
+stock_price.drop(['date', 'hour', 'minute', 'second'], axis=1, inplace=True)
+stock_price.sort_values('Datetime', inplace=True)
+
+x_data = stock_price['Datetime']
+y_data = stock_price['price']
+stock_price.set_index('Datetime', inplace=True)
+x_numerical = (stock_price.index - stock_price.index.min()).total_seconds()
+
+plt.figure(figsize=(12, 6))
+plt.plot(x_data, y_data, label='Stock Price')
+plt.title('Stock Price Over Time')
+plt.xlabel('Date')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
+
+def gompertz_curve(t, a, b, c):
+    return a * np.exp(b * np.exp(-c * t))
+
+a_guess = y_data[0]
+central_index = len(x_data) // 2
+centre_value_of_x = x_data[central_index]
+timestamp_obj = pd.Timestamp(centre_value_of_x)
+c_guess = 1 / timestamp_obj.year
+b_guess = np.exp(c_guess * timestamp_obj.year)
+
+p0 = (a_guess, b_guess, c_guess)
+popt, pcov = curve_fit(gompertz_curve, x_numerical, y_data, p0=p0, maxfev=8000)
+
+sns.heatmap(pcov, cmap='coolwarm', annot=True)
+
+y_pred = gompertz_curve(x_numerical, *popt)
+
+plt.figure(figsize=(12, 6))
+plt.plot(x_data, y_data, label='Original Data')
+plt.plot(x_data, y_pred, '--', label='Fitted Curve')
+plt.title('Stock Price and Fitted Gompertz Curve')
+plt.xlabel('Date')
+plt.ylabel('Stock Price')
+plt.legend()
+plt.show()
+
+r_squared = r2_score(y_data, y_pred)
+print("Coefficient of Determination = ", r_squared)
+
+prac 3 logistic Curvepath = "microbial_growth_curve.csv"
+
+import numpy as np
+import pandas as pd
+from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+microbes_growth = pd.read_csv(path)
+
+x_data = microbes_growth['t [h]']
+y_data = microbes_growth['microbes(g)']
+microbes_growth['Time'] = microbes_growth['t [h]'] - microbes_growth['t [h]'].min()
+x_numerical = microbes_growth['Time']
+
+plt.figure(figsize=(12, 6))
+plt.plot(x_data, y_data, label='Microbes growth')
+plt.title('Microbes Growth Rate')
+plt.xlabel('time')
+plt.ylabel("Growth(g)")
+plt.legend()
+plt.show()
+
+def logistic_curve(t, k, r, t0):
+    return k / (1 + np.exp(-r * (t - t0)))
+
+k_guess = y_data[0]
+central_index = len(x_data) // 2
+centre_value_of_x = x_data[central_index]
+t0_guess = centre_value_of_x
+r_guess = 1 / t0_guess
+
+p0 = (k_guess, r_guess, t0_guess)
+popt, pcov = curve_fit(logistic_curve, x_numerical, y_data, p0=p0, maxfev=10000)
+
+sns.heatmap(pcov, cmap='coolwarm', annot=True)
+
+y_pred = logistic_curve(x_numerical, *popt)
+
+plt.figure(figsize=(12, 6))
+plt.plot(x_data, y_data, label='Original Data')
+plt.plot(x_data, y_pred, '--', label='Fitted Curve')
+plt.title('Microbes Growth Curve and Fitted Logistic Curve')
+plt.xlabel('time (in hours)')
+plt.ylabel('Growth (g)')
+plt.legend()
+plt.show()
+
+r_squared = r2_score(y_data, y_pred)
+print("Coefficient of Determination = ", r_squared)
+
+prac 4 moving average Methodpath = r"Symphony-Data.csv"
+import pandas as pd
+import matplotlib.pyplot as plt
+
+df = pd.read_csv(path)
+df = df.drop(['OPEN', 'HIGH', 'LOW', 'VOLUME', 'CHANGE(%)'], axis=1)
+df['DATE'] = pd.to_datetime(df['DATE'], format='%d-%b-%y')
+df = df.sort_values(by='DATE', ascending=True)
+
+df['Moving-Avg'] = df['PRICE'].rolling(window=30).mean()
+df['Trend'] = df['Moving-Avg'].diff()
+df['Seasonal_Variation'] = df['PRICE'] - df['Moving-Avg']
+
+plt.plot(df['DATE'], df['PRICE'], label='Raw Data')
+plt.plot(df['DATE'], df['Moving-Avg'], label='Moving Avg. Data')
+plt.legend()
+plt.xlabel('Year')
+plt.ylabel('Stock Price(Rs.)')
+plt.title('Stock Closing Price Data')
+
+plt.plot(df['DATE'], df['Trend'], label='Trend')
+plt.plot(df['DATE'], df['Seasonal_Variation'], label='Seasonal Variation')
+plt.legend()
+plt.xlabel('Year')
+plt.ylabel('Stock Price(Rs.)')
+plt.title('Stock Closing Price Data')
+
+prac 5 ratio to Trend Methodimport pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+path = r"Symphony-Data.csv"
+df = pd.read_csv(path)
+df = df.drop(['OPEN', 'HIGH', 'LOW', 'VOLUME', 'CHANGE(%)'], axis=1)
+df['DATE'] = pd.to_datetime(df['DATE'], format="%d-%b-%y")
+df = df.sort_values(by='DATE', ascending=True)
+df['Year'] = df['DATE'].dt.year
+df['Month'] = df['DATE'].dt.month
+
+monthly_mean = df.groupby(['Month', 'Year'])['PRICE'].mean().unstack()
+
+means = [monthly_mean[y].mean() for y in range(2019, 2025)]
+for i, year in enumerate(range(2019, 2025)):
+    monthly_mean[f'ratio_{year}'] = monthly_mean[year] / means[i]
+
+ratio = monthly_mean[[f'ratio_{y}' for y in range(2019, 2025)]]
+normalized_indices = ratio.mean(axis=1)
+
+plt.plot(normalized_indices.index, normalized_indices, marker='o')
+plt.xlabel('Month')
+plt.ylabel('Normalized Indices')
+plt.title('Normalized Seasonal Indices')
+
+prac 6 ratio to moving average method
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+path = r"Symphony-Data.csv"
+df = pd.read_csv(path)
+df = df.drop(['OPEN', 'HIGH', 'LOW', 'VOLUME', 'CHANGE(%)'], axis=1)
+df['DATE'] = pd.to_datetime(df['DATE'], format="%d-%b-%y")
+df = df.sort_values(by='DATE', ascending=True)
+df['Year'] = df['DATE'].dt.year
+df['Month'] = df['DATE'].dt.month
+
+df = df.groupby(['Month', 'Year'])['PRICE'].mean().unstack()
+
+df['Monthly Average'] = df.loc[:, 2019:2024].mean(axis=1)
+df['Centered Moving Average'] = df['Monthly Average'].rolling(window=2, center=True).mean()
+df['Ratio'] = df['Monthly Average'] / df['Centered Moving Average']
+
+sum_ratios = df['Ratio'].sum()
+df['Seasonal Index'] = df['Ratio'] * (len(df) / sum_ratios)
+
+for y in range(2019, 2025):
+    df[f'Deseasonalized_{y}'] = df[y] / df['Seasonal Index']
+
+plt.figure(figsize=(14, 8))
+plt.subplot(3, 1, 1)
+for y in range(2019, 2025):
+    plt.plot(df.index, df[y], label=str(y), marker='o')
+plt.title('Original Sales Data')
+plt.legend(loc='upper right')
+
+plt.subplot(3, 1, 2)
+plt.plot(df.index, df['Seasonal Index'], label='Seasonal Index', marker='o', color='orange')
+plt.title('Seasonal Indices')
+plt.legend()
+
+plt.subplot(3, 1, 3)
+for y in range(2019, 2025):
+    plt.plot(df.index, df[f'Deseasonalized_{y}'], label=str(y), marker='o')
+plt.title('Deseasonalized Data')
+plt.legend(loc='upper right')
+plt.tight_layout()
+plt.show()
+
+prac 7 link relative method
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+path = r"Symphony-Data.csv"
+df = pd.read_csv(path)
+df = df.drop(['OPEN', 'HIGH', 'LOW', 'VOLUME', 'CHANGE(%)'], axis=1)
+df['DATE'] = pd.to_datetime(df['DATE'], format="%d-%b-%y")
+df = df.sort_values(by='DATE', ascending=True)
+df['Year'] = df['DATE'].dt.year
+df['Month'] = df['DATE'].dt.month
+
+df = df.groupby(['Month', 'Year'])['PRICE'].mean().unstack()
+
+for i in range(1, 6):
+    df[f'Link_Relative_Y{i+1}'] = df[2019+i] / df[2018+i]
+
+df['Average_Link_Relative'] = df[[f'Link_Relative_Y{i}' for i in range(2, 7)]].mean(axis=1)
+seasonal_indices = df['Average_Link_Relative']
+seasonal_indices /= seasonal_indices.sum()
+seasonal_indices *= 12
+
+for i in range(6):
+    df[f'Deseasonalized_Year{i+1}'] = df[2019+i] / seasonal_indices
+
+plt.figure(figsize=(14, 8))
+plt.subplot(3, 1, 1)
+for i in range(6):
+    plt.plot(df.index, df[2019+i], label=str(2019+i), marker='o')
+plt.title('Original Data')
+plt.legend()
+
+plt.subplot(3, 1, 2)
+plt.plot(df.index, seasonal_indices, label='Seasonal Index', marker='o', color='orange')
+plt.title('Seasonal Indices')
+plt.legend()
+
+plt.subplot(3, 1, 3)
+for i in range(6):
+    plt.plot(df.index, df[f'Deseasonalized_Year{i+1}'], label=str(2019+i), marker='o')
+plt.title('Deseasonalized Data')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+prac 8 variate difference method
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+path = "Symphony-Data.csv"
+df = pd.read_csv(path)
+df = df.drop(['OPEN', 'HIGH', 'LOW', 'VOLUME', 'CHANGE(%)'], axis=1)
+df['DATE'] = pd.to_datetime(df['DATE'], format="%d-%b-%y")
+df = df.sort_values(by='DATE', ascending=True)
+
+price_array = df['PRICE'].to_numpy()
+differences = np.diff(price_array)
+
+mean_diff = np.mean(differences)
+var_diff = np.var(differences)
+var_random = var_diff / 2
+
+print(f"Mean of Differences: {mean_diff}")
+print(f"Variance of Differences: {var_diff}")
+print(f"Variance of Random Components: {var_random}")
+
+plt.plot(differences, marker='o')
+plt.title('Differences Between Successive Observations')
+plt.xlabel('Time')
+plt.ylabel('Difference Value')
+plt.grid(True)
+plt.show()
+
+prac 9 exponential smoothing 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+
+path = "Symphony-Data.csv"
+df = pd.read_csv(path)
+df = df.sort_values(by='DATE', ascending=True)
+
+model = ExponentialSmoothing(df['PRICE'], trend=None, seasonal='add', seasonal_periods=365)
+fit = model.fit()
+
+forecast = fit.forecast(365)
+
+plt.figure(figsize=(10, 6))
+plt.plot(df['PRICE'], label='Original')
+plt.plot(fit.fittedvalues, label='Fitted', linestyle='--')
+plt.plot(forecast, label='Forecast', linestyle='--')
+plt.legend()
+plt.show()
+
+print(forecast)
+
+prac 10 ARIMA short term forecasting
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from pmdarima import auto_arima
+
+path = "Symphony-Data.csv"
+df = pd.read_csv(path)
+df = df.sort_values(by='DATE', ascending=True)
+
+model = ARIMA(df['PRICE'], order=(5, 1, 1), seasonal_order=(1, 1, 1, 12))
+fit = model.fit()
+
+forecast = fit.forecast(steps=365)
+
+plt.figure(figsize=(10, 6))
+plt.plot(df['PRICE'], label='Original')
+plt.plot(fit.fittedvalues, label='Fitted', linestyle='--')
+plt.plot(forecast, label='Forecast', linestyle='--')
+plt.legend()
+plt.show()
+
+print(forecast)
 
